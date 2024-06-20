@@ -14,6 +14,7 @@ setuptools.setup(
         'seaborn==0.13.2',
         'spacy==3.7.5',
         'textblob==0.18.0.post0',
-        'wordcloud==1.9.3'
+        'wordcloud==1.9.3',
+        'huggingface_hub==0.23.4'
     ]
 )

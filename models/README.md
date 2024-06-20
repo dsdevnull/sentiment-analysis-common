@@ -1,5 +1,9 @@
-# Models Directory
-This directory is empty since I added the .pickle/.pkl files to the `.gitignore`, this is to keep everything clean in
-the event that more models get added. This directory might eventually go away once the models get uploaded to huggingface.
+---
+language:
+- en
+---
 
-## Please keep this file here
+# Sentiment Analysis Common Models
+This is the models created from this [sentiment analysis common repo](https://github.com/dsdevnull/sentiment-analysis-common) that I created.
+
+Right now this repo contains: Multinomial Naive Bayes model on top of a Term Frequency-Inverse Document Frequency (TFIDF) ranking. Plus the Vectorizer used to fit the model.
