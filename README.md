@@ -13,6 +13,8 @@ One model uses Term Frequency-Inverse Document Frequency (TFIDF) ranks while the
 I might make some API that interacts with this common library. I will also make a dockerfile eventually to have all this
 setup happen.
 
+[Hugging Face Link](https://huggingface.co/dsdevnull/mn_bays_tfidf_sentiment_analysis)
+
 ## Steps to setup
 1. `pip install .` on the main directory
 2. Run the Jupyter Notebook fully. That will create all the models that you need.
