@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name='sentiment-analysis-imdb',
+    name='sentiment-analysis-common',
     version='0.1.0',
     author='Duncan Squires',
     packages=setuptools.find_packages(),
