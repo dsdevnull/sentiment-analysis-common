@@ -164,3 +164,5 @@ cython_debug/
 
 # Hugging Face
 .huggingface
+data/
+!data/README.md
