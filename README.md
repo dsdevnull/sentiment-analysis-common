@@ -16,7 +16,7 @@ setup happen.
 [Hugging Face Link](https://huggingface.co/dsdevnull/mn_bays_tfidf_sentiment_analysis)
 
 ## Steps to setup
-1. `pip install .` on the main directory
+1. `uv sync` on the main directory
 2. Run the Jupyter Notebook fully. That will create all the models that you need.
-3. `python main.py` to run the code.
+3. `uv run main.py` to run the code.
 4. Test!
