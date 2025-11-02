@@ -23,6 +23,7 @@ def simple_stemmer(text):
 
 def remove_stop_words(line, is_lower_case=False) -> str:
     tokenizer = ToktokTokenizer()
+    nltk.download("stopwords")
     stopword_list = nltk.corpus.stopwords.words("english")
     tokens = tokenizer.tokenize(line)
     tokens = [token.strip() for token in tokens]
