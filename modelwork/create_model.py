@@ -90,6 +90,15 @@ def apply_stemmer_and_tokenizer(pre_df: pl.Dataframe) -> pl.Dataframe:
     return cleaned
 
 
+def split_test_and_train_data(whole_df: pl.Dataframe) -> pl.Dataframe:
+    norm_train_reviews = (
+        whole_df.lazy()
+        .select("review")
+        .limit(40000)
+        .collect()
+    )
+
+
 if __name__ == "__main__":
     development_flag = True
     if development_flag:
@@ -105,4 +114,3 @@ if __name__ == "__main__":
 
     cleaned_df = preprocess_dataframe(raw_df=df)
     cleaned_df = apply_stemmer_and_tokenizer(cleaned_df)
-    print(cleaned_df.head())
