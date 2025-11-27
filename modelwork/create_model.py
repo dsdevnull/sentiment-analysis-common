@@ -10,6 +10,9 @@ from nltk.stem import PorterStemmer
 from nltk.tokenize import TreebankWordTokenizer
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.preprocessing import LabelBinarizer
 
 # setting up new Stemmer and Tokenizer
 tokenizer = TreebankWordTokenizer()
@@ -93,10 +96,10 @@ def apply_stemmer_and_tokenizer(pre_df: pl.DataFrame) -> pl.DataFrame:
     return cleaned
 
 
-def split_test_and_train_data(whole_df: pl.DataFrame) -> Tuple[pl.Series, pl.Series]:
+def split_test_and_train_data(whole_df: pl.DataFrame, column_to_split: str = "review") -> Tuple[pl.Series, pl.Series]:
     rounded_num_rows = int(round(len(whole_df) * 0.8))
-    train = whole_df["review"][:rounded_num_rows]
-    test = whole_df["review"][rounded_num_rows:]
+    train = whole_df[column_to_split][:rounded_num_rows]
+    test = whole_df[column_to_split][rounded_num_rows:]
     return train, test
 
 def count_vectorizer(train_df: pl.Series, test_df: pl.Series) -> Tuple[pl.Series, pl.Series]:
@@ -118,6 +121,24 @@ def term_freq_inverse_document_freq(train_df: pl.Series, test_df: pl.Series) -> 
     print("Tfidf_test:", tv_test_reviews.shape)
     return tv_train_reviews, tv_test_reviews
 
+def label_binarizer(whole_df: pl.DataFrame) -> Tuple[pl.DataFrame, pl.Series, pl.Series]:
+    lb = LabelBinarizer()
+    sentiment = lb.fit_transform(whole_df["sentiment"])
+    train_sentiment_data, test_sentiment_data = split_test_and_train_data(whole_df, column_to_split="sentiment")
+    return sentiment, train_sentiment_data, test_sentiment_data
+
+def train_models(model_type: str, cv_train: pl.Series, tv_train: pl.Series, train_sentiment_data:pl.Series) -> Tuple[pl.Model, pl.Model]:
+    if model_type == "log_r":
+        lr = LogisticRegression(penalty="l2", max_iter=500, C=1, random_state=42)
+        bow_model = lr.fit(cv_train, train_sentiment_data)
+        tfidf_model = lr.fit(tv_train, train_sentiment_data)
+    elif model_type == "mnb":
+        mnb = MultinomialNB()
+        bow_model = mnb.fit(cv_train, train_sentiment_data)
+        tfidf_model = mnb.fit(tv_train, train_sentiment_data)
+
+    return bow_model, tfidf_model
+
 if __name__ == "__main__":
     #Have this be a flag that can be sent from the api
     development_flag = True
@@ -137,5 +158,5 @@ if __name__ == "__main__":
     train_data, test_data = split_test_and_train_data(cleaned_df)
     cv_train_data, cv_test_data = count_vectorizer(train_data, test_data)
     tv_train_data, tv_test_data = term_freq_inverse_document_freq(train_data, test_data)
-    print(tv_train_data.shape)
-    print(tv_test_data.shape)
+    sentiment_data, train_sentiment, test_sentiment = label_binarizer(cleaned_df)
+    multi_nb_bow, multi_nb_tfidf = train_multinomial_bayes_model(cv_train_data, tv_train_data, train_sentiment)
