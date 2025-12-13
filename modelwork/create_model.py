@@ -11,6 +11,7 @@ from nltk.tokenize import TreebankWordTokenizer
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import LabelBinarizer
 
@@ -18,6 +19,8 @@ from sklearn.preprocessing import LabelBinarizer
 tokenizer = TreebankWordTokenizer()
 stopword_list = set(stopwords.words("english"))
 ps = PorterStemmer()
+lr = LogisticRegression(penalty="l2", max_iter=500, C=1, random_state=42)
+mnb = MultinomialNB()
 
 
 def download_recent_data():
@@ -108,7 +111,7 @@ def split_test_and_train_data(
 def count_vectorizer(
     train_df: pl.Series, test_df: pl.Series
 ) -> Tuple[pl.Series, pl.Series]:
-    cv = CountVectorizer(min_df=0.0, max_df=1.0, binary=False, ngram_range=(1, 3))
+    cv = CountVectorizer(min_df=2.0, max_df=1.0, binary=False, ngram_range=(1, 3))
     # transformed train reviews
     cv_train_reviews = cv.fit_transform(train_df)
     # transformed test reviews
@@ -148,16 +151,33 @@ def train_models(
     model_type: str = "log_r",
 ) -> Tuple[pl.Model, pl.Model]:
     if model_type == "log_r":
-        lr = LogisticRegression(penalty="l2", max_iter=500, C=1, random_state=42)
         bow_model = lr.fit(cv_train, train_sentiment_data)
         tfidf_model = lr.fit(tv_train, train_sentiment_data)
     elif model_type == "mnb":
-        mnb = MultinomialNB()
         bow_model = mnb.fit(cv_train, train_sentiment_data)
         tfidf_model = mnb.fit(tv_train, train_sentiment_data)
 
     return bow_model, tfidf_model
 
+
+def test_predictions(
+    cv_test: pl.Series, tv_test: pl.Series, model_type: str = "log_r"
+) -> Tuple[pl.Model, pl.Model]:
+    if model_type == "log_r":
+        bow_predict = lr.predict(cv_test)
+        tfidf_predict = lr.predict(tv_test)
+    elif model_type == "mnb":
+        bow_predict = mnb.predict(cv_test)
+        tfidf_predict = mnb.predict(tv_test)
+
+    return bow_predict, tfidf_predict
+
+def score_models(
+    bow_predict: pl.Series, tfidf_predict: pl.Series, test_sentiments: pl.series) -> Tuple[float, float]:
+    bow_score = accuracy_score(bow_predict, test_sentiments)
+    tfidf_score = accuracy_score(tfidf_predict, test_sentiments)
+
+    return bow_score, tfidf_score
 
 if __name__ == "__main__":
     # Have this be a flag that can be sent from the api
@@ -173,12 +193,16 @@ if __name__ == "__main__":
             df = load_text_file(base_dir="./data/aclImdb/train")
         df.write_csv("./data/output.csv")
 
+    model_type = "log_r"
     cleaned_df = preprocess_dataframe(raw_df=df)
     cleaned_df = apply_stemmer_and_tokenizer(cleaned_df)
     train_data, test_data = split_test_and_train_data(cleaned_df)
     cv_train_data, cv_test_data = count_vectorizer(train_data, test_data)
     tv_train_data, tv_test_data = term_freq_inverse_document_freq(train_data, test_data)
     sentiment_data, train_sentiment, test_sentiment = label_binarizer(cleaned_df)
-    multi_nb_bow, multi_nb_tfidf = train_models(
-        cv_train_data, tv_train_data, train_sentiment
-    )
+    bow_model, tfidf_model = train_models(cv_train_data, tv_train_data, train_sentiment)
+    test_bow_pred, test_tfidf_pred = test_predictions(cv_test_data, tv_test_data, model_type)
+    bow_score, tfidf_score = score_models(test_bow_pred, test_tfidf_pred, test_sentiment)
+
+    print("Bow:", bow_score)
+    print("Tfidf:", tfidf_score)
