@@ -1,3 +1,5 @@
+from typing import List, Any
+
 from modelwork import (
     clean_html,
     remove_spec_char,
@@ -10,7 +12,7 @@ from modelwork import (
 from huggingface_hub import hf_hub_download
 
 
-def run_preprocessing_pipeline(text, functions) -> str:
+def run_preprocessing_pipeline(text: str, functions: List[Any]) -> str:
     for function in functions:
         text = function(text)
     return text
@@ -37,7 +39,7 @@ def run_predict(text):
         hf_hub_download(
             repo_id="dsdevnull/mn_bays_tfidf_sentiment_analysis",
             local_dir="models",
-            filename="tfidi_vectorizer.pickle",
+            filename="tfidf_vectorizer.pickle",
         )
     )
 
