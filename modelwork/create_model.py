@@ -22,7 +22,7 @@ class SentimentClassifier:
     def __init__(
         self,
         data_dir: str = "./data",
-        model_type: str = "log_r",  # "log_r" or "mnb"
+        model_type: str = "log_r",
         test_size: float = 0.2,
         random_state: int = 42,
     ) -> None:
@@ -31,12 +31,10 @@ class SentimentClassifier:
         self.test_size = test_size
         self.random_state = random_state
 
-        # NLTK tools
         self.tokenizer = TreebankWordTokenizer()
         self.stopword_list = set(stopwords.words("english"))
         self.ps = PorterStemmer()
 
-        # Models
         self.bow_lr = LogisticRegression(
             penalty="l2", max_iter=500, C=1, random_state=42
         )
@@ -46,15 +44,12 @@ class SentimentClassifier:
         self.bow_mnb = MultinomialNB()
         self.tfidf_mnb = MultinomialNB()
 
-        # Vectorizers
         self.cv: Optional[CountVectorizer] = None
         self.tv: Optional[TfidfVectorizer] = None
 
-        # Fitted models
         self.bow_model = None
         self.tfidf_model = None
 
-    # ---------- Data acquisition ----------
 
     def download_recent_data(self) -> None:
         url = "https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz"
@@ -92,7 +87,6 @@ class SentimentClassifier:
 
         return pl.DataFrame(data, schema=["review", "sentiment"])
 
-    # ---------- Preprocessing ----------
 
     def _preprocess_dataframe(self, raw_df: pl.DataFrame) -> pl.DataFrame:
         print("preprocessing...")
@@ -128,7 +122,6 @@ class SentimentClassifier:
         cleaned = pre_df.with_columns(pl.Series("review", normalized_reviews))
         return cleaned
 
-    # ---------- Splits & vectorizers ----------
 
     def _stratified_train_test_split(
         self,
@@ -147,7 +140,6 @@ class SentimentClassifier:
     def _fit_vectorizers(
         self, x_train: List[str], x_test: List[str]
     ):
-        # CountVectorizer
         self.cv = CountVectorizer(
             min_df=0.0, max_df=1.0, binary=False, ngram_range=(1, 2)
         )
@@ -156,7 +148,6 @@ class SentimentClassifier:
         print("BOW_cv_train:", cv_train.shape)
         print("BOW_cv_test:", cv_test.shape)
 
-        # TfidfVectorizer
         self.tv = TfidfVectorizer(
             min_df=2, max_df=0.95, use_idf=True, ngram_range=(1, 2)
         )
@@ -167,7 +158,6 @@ class SentimentClassifier:
 
         return cv_train, cv_test, tv_train, tv_test
 
-    # ---------- Training & evaluation ----------
 
     def _select_models(self):
         if self.model_type == "log_r":
@@ -178,7 +168,6 @@ class SentimentClassifier:
             raise ValueError(f"Unknown model_type: {self.model_type}")
 
     def fit(self, df: pl.DataFrame) -> None:
-        # full training pipeline given a pre-loaded raw dataframe
         cleaned = self._preprocess_dataframe(df)
         cleaned = self._apply_stemmer_and_tokenizer(cleaned)
 
@@ -189,7 +178,6 @@ class SentimentClassifier:
         self.bow_model = bow_base.fit(cv_train, y_train)
         self.tfidf_model = tfidf_base.fit(tv_train, y_train)
 
-        # store test sets for quick evaluation later if desired
         self._x_test = x_test
         self._y_test = y_test
         self._cv_test = cv_test
@@ -209,7 +197,6 @@ class SentimentClassifier:
         tfidf_score = accuracy_score(self._y_test, tfidf_pred)
         return bow_score, tfidf_score
 
-    # ---------- Inference & saving ----------
 
     def predict(self, texts: List[str], use_tfidf: bool = True) -> List[str]:
         if use_tfidf:
